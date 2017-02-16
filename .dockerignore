@@ -1,4 +1,4 @@
+.git
 *.csv.gz
 *.csv
 *.json
-.DS_Store

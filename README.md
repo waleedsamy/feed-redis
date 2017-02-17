@@ -1,20 +1,32 @@
 # feed-redis
 > Feeding redis with csv data using awk and redis-mass insert
 
-#### Build & Run
+[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://registry.hub.docker.com/u/waleedsamy/feed-redis/)
+
+#### Build
 ```bash
-  $ head giataobject.csv
-  > HOTELID;ORTID;LANDCODE;HOTELNAME;ALTERNATIVNAME;TYP;BREITENGRAD;LAENGENGRAD;HOTELKETTENID
-  > "3";"6071";"EG";"Sofitel Legend Old Cataract";"";"1";"24.082284426992";"32.887715399265";"1001"
-  > "4";"2";"EG";"Ibis Styles Dahab Lagoon";"";"1";"28.479180941035";"34.49981957674";"2178"
-  > "9663";"4021";"FR";"Pierre & Vacances Hôtel de l'Esterel";"";"1";"43.427585";"6.8510630000001";"1417"
-  # https://gist.github.com/drjerry/3481798
-  $ awk -F ";" -f tab2json.awk giataobject.csv | redis-cli --raw -h redis --pipe
-  $ echo "wa's" | awk  -v ESQUOTE="\\\'" '{gsub( "[:'\'']",ESQUOTE); print $0;}'
-  > wa\'s
-  $ echo "Pierre & Vacances Hôtel de l'Esterel" | awk  -v ESQUOTE="\\\'" '{gsub( "[:'\'']",ESQUOTE); print $0;}'
-  > Pierre & Vacances Hôtel de l\'Esterel
   $ docker build -t feed-redis .
-  $ docker run --name redis -d redis:3-alpine redis-server --appendonly yes
-  $ docker run --name feed -d -v ~/code/github.com/feed-redis:/feed --link redis feed-redis
 ```
+
+#### Run
+```bash
+  $ docker run --name redis -d redis:3 redis-server --appendonly yes
+  $ docker run -d --link redis waleedsamy/feed-redis {DOWNLOADABLE_LINK}
+```
+
+#### How does it work?
+ * downlaod and unzip gz file
+ * use awk to build redis `SET` expression with first columns of the csv as the **KEY**
+ * use [mass-insert](https://redis.io/topics/mass-insert) to insert in redis as `cat data.txt | redis-cli --raw --pipe`
+ * you can use the awk program as `awk -F ";" -f tab2json.awk big.csv`
+
+
+
+#### Notes:
+ * escape single quote in string
+
+  ```bash
+     $ echo "Pierre & Vacances Hôtel de l'Esterel" | awk  -v ESQUOTE="\\\'" '{gsub( "[:'\'']",ESQUOTE); print $0;}'
+     > Pierre & Vacances Hôtel de l\'Esterel
+  ```
+ * you can find awk `tab2json` gist [here](https://gist.github.com/drjerry/3481798)
